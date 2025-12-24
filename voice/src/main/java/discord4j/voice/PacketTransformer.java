@@ -121,15 +121,19 @@ final class PacketTransformer {
         byte[] header = new byte[headerLenght];
         packet.getBytes(0, header);
 
-        int nonceLenght = this.encryptionAdapter.getNonceLength();
+        // For _rtpsize modes, the packet contains only 4 bytes of nonce at the end
+        // The full nonce is built by placing those 4 bytes at the start and padding with zeros
+        int packetNonceLength = 4;
         int audioOffset = packet.readableBytes();
-        int audioLength = audioOffset - nonceLenght;
+        int audioLength = audioOffset - packetNonceLength;
 
         byte[] encrypted = new byte[audioLength];
         packet.getBytes(headerLenght, encrypted, 0, audioLength);
 
-        byte[] nonce = new byte[nonceLenght];
-        packet.getBytes(headerLenght + audioLength, nonce);
+        // Build full nonce: 4 bytes from packet + zeros to fill required length
+        int fullNonceLength = this.encryptionAdapter.getNonceLength();
+        byte[] nonce = new byte[fullNonceLength];
+        packet.getBytes(headerLenght + audioLength, nonce, 0, packetNonceLength);
 
         packet.release();
 
