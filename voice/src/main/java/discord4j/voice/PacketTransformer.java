@@ -114,6 +114,14 @@ final class PacketTransformer {
 
         int headerLenght = packet.readerIndex();
 
+        // Check for RTCP packets (types 200-204) and skip them gracefully
+        // RTCP SR (200), RR (201), SDES (202), BYE (203), APP (204)
+        // These are signed bytes, so 200-204 appear as negative values
+        if (type >= (byte) 200 && type <= (byte) 204) {
+            packet.release();
+            return null; // Skip RTCP packets
+        }
+
         if (type != (byte) 0x78) {
             throw new IllegalArgumentException("Unsupported packet type: " + type);
         }
